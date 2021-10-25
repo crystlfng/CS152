@@ -6,9 +6,10 @@ void yyerror(const char *msg);
 extern int yylex();
 extern int yyparse();
 extern FILE* yyin;
+
 extern int line;
 extern int pos;
-void yyerror(const char* s);
+
 %}
 
 /* %union specifies entire collection of possible data types */
@@ -34,12 +35,13 @@ void yyerror(const char* s);
 %%
 
 prog_start:	functions {printf("prog_start -> functions\n");}
+		| {printf("prog_start -> epsilon\n");}
 ;
 
 function: 	FUNCTION IDENT SEMICOLON 
 		BEGIN_PARAMS declarations END_PARAMS
 		BEGIN_LOCALS declarations END_LOCALS
-		BEGIN_BODY statement END_BODY
+		BEGIN_BODY statements END_BODY
 		{printf("function-> FUNCTION IDENT SEMICOLON BEGIN_PARAMS decalarations END_PARAMS BEGIN_LOCALS declarations END_LOCALS BEGIN_BODY statement END_BODY\n");}
 ;
 
@@ -160,14 +162,12 @@ vars: 	var {printf("vars -> var\n");}
 %%
 
 int main(int argc, char ** argv) {
-    if (argc > 1) {
-        yyin = fopen(argv[1], "r");
-        if (yyin == NULL) {
-            printf("syntax: %s filename", argv[0]);
-        }
-    }
-    yyparse(); // more magical stuff
-    return 0;
+   yyin = stdin;
+
+  do {
+    yyparse();
+  } while(!feof(yyin));
+   return 0;
 }
 
 void yyerror(const char *msg) {
