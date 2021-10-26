@@ -46,7 +46,7 @@ function: 	FUNCTION IDENT SEMICOLON
 ;
 
 functions:	function functions {printf("functions -> function functions\n");}
-		|{printf("functions -> epsilon");}
+		|{printf("functions -> epsilon"\n);}
 ;
 
 identifier: 	IDENT {printf("identifier -> IDENT %s\n",$1);}
@@ -94,7 +94,7 @@ boolexpr:	relationandexpr OR relationandexpr
 		| relationandexpr {printf("boolexpr -> relationandexpr\n");}
 ;
 
-relationandexpr:	relationexpr AND relationexpr
+relationandexpr:	relationandexpr AND relationexpr
 			{printf("relationandexpr -> relationexpr AND relationexpr\n");}
 			|relationexpr {printf("relationandexpr -> relationexpr\n");}
 ;
@@ -119,9 +119,9 @@ comp:	EQ {printf("comp -> EQ\n");}
 	| GTE {printf("comp -> GTE\n");}
 ;
 
-expression:	multiplicativeexpr ADD multiplicativeexpr
+expression:	expression ADD multiplicativeexpr
 		{printf("expression -> multiplicativeexpr PLUS multiplicativeexpr\n");}
-		| multiplicativeexpr SUB multiplicativeexpr
+		| expression SUB multiplicativeexpr
 		{printf("expression -> multiplicativeexpr SUB multiplicativeexpr\n");}
 		| multiplicativeexpr
 		{printf("expression -> multiplicativeexpr\n");}
