@@ -1,9 +1,9 @@
 all:your_compiler 
-phase2.tab.c phase2.tab.h:	phase2.y
-	bison -t -v -d phase2.y
-lex.yy.c: phase2.lex phase2.tab.h
-	flex phase2.lex 
-your_compiler: lex.yy.c phase2.tab.c phase2.tab.h
-	gcc -o your_compiler phase2.tab.c lex.yy.c -lfl
+mini_l.tab.c mini_l.tab.h:	mini_l.y
+	bison -t -v -d mini_l.y
+lex.yy.c: mini_l.lex mini_l.tab.h
+	flex mini_l.lex 
+your_compiler: lex.yy.c mini_l.tab.c mini_l.tab.h
+	gcc -o your_compiler mini_l.tab.c lex.yy.c -lfl
 clean:
-	rm phase2 phase2.tab.c lex.yy.c phase2.tab.h phase2.output
+	rm mini_l.tab.c lex.yy.c mini_l.tab.h mini_l.output

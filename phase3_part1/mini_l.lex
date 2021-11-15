@@ -1,16 +1,16 @@
 %option noyywrap
-%{   
+%{
 #include<string.h>
 #include "phase2.tab.h"
    int currLine = 1, currPos = 1;
-   
+
    extern char *identToken;
    extern int numberToken;
 %}
 
 DIGIT    [0-9]
 LETTER   [a-zA-Z]
-   
+
 %%
 
 function       {currPos += yyleng; return FUNCTION;}
@@ -61,16 +61,15 @@ return         {currPos += yyleng; return RETURN;}
 "continue"     {currPos += yyleng; return CONTINUE;}
 
 {DIGIT}+       {
-  currPos += yyleng; 
+  currPos += yyleng;
   char * token = malloc(sizeof(char) * yyleng);
   strcpy(token, yytext);
   yylval.op_val = token;
-  numberToken = atoi(yytext); 
+  numberToken = atoi(yytext);
   return NUMBER;
 }
 
 ##(.)*\n       {/* do not print comments */ currLine++; currPos = 1;}
-
 [ \t]+         {/* ignore spaces */ currPos += yyleng;}
 
 "\n"           {currLine++; currPos = 1;}
@@ -80,7 +79,7 @@ return         {currPos += yyleng; return RETURN;}
    char * token = malloc(sizeof(char) * yyleng);
    strcpy(token, yytext);
    yylval.op_val = token;
-   identToken = yytext; 
+   identToken = yytext;
    return IDENT;
 }
 
@@ -92,6 +91,4 @@ return         {currPos += yyleng; return RETURN;}
 .   {printf("Error at line %d, column %d: unrecognized symbol \"%s\"\n", currLine, currPos, yytext); exit(0);}
 
 %%
-
-
 

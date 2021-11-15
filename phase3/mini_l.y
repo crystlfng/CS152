@@ -1,6 +1,8 @@
 %{
    #include<stdio.h>
    #include<string.h>
+   #include<vector>
+   #include<vector.h>
    void yyerror(const char *msg);
    extern int currLine;
    int myError = 0;
@@ -10,14 +12,23 @@
    int numberToken;
    int productionID = 0;
 
-   char list_of_function_names[100][100];
-   int  count_names = 0;
+   struct symbol{
+	string name;
+	int val;
+	string type;	
+   }
+   vector<symbol> symbolTable;
 
-//#define YYDEBUG 1
-//yydebug=1;
 %}
 
 %union {
+  struct attribute{
+	string name;
+	int index;
+	string type;
+	int value;
+	int size;
+  }
   char *op_val;
 }
 
@@ -67,7 +78,7 @@ function: function_ident
 end_body: END_BODY {
    printf("endfunc\n");
 }
-
+;
 function_ident: FUNCTION ident {
 
      char *token = identToken;
@@ -77,10 +88,16 @@ function_ident: FUNCTION ident {
 }
 
 
-
+;
 ident:
 	IDENT
-		{ $$ = $1; };
+		{struct symbol temp;
+		temp.name = "ident";
+		temp.val = $1;
+		temp.type =  "identifier";
+		symbolTable.push_back(temp);
+		}
+;
 
 declarations: 
 	/* epsilon */
