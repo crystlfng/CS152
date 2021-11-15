@@ -1,0 +1,16 @@
+function main;
+beginparams
+endparams
+
+beginlocals
+  a : integer;
+  b : integer;
+  c : integer;
+endlocals
+
+beginbody	
+  a := 100;
+  b := 50;
+  c := a + b;
+endbody
+
