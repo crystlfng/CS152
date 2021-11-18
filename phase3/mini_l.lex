@@ -1,6 +1,5 @@
 %option noyywrap
 %{   
-#include<string.h>
 #include "mini_l.tab.h"
    int currLine = 1, currPos = 1;
    
@@ -60,14 +59,7 @@ return         {currPos += yyleng; return RETURN;}
 ":="           {currPos += yyleng; return ASSIGN;}
 "continue"     {currPos += yyleng; return CONTINUE;}
 
-{DIGIT}+       {
-  currPos += yyleng; 
-  char * token = malloc(sizeof(char) * yyleng);
-  strcpy(token, yytext);
-  yylval.op_val = token;
-  numberToken = atoi(yytext); 
-  return NUMBER;
-}
+{DIGIT}+       {currPos += yyleng; numberToken = atoi(yytext); return NUMBER;}
 
 ##(.)*\n       {/* do not print comments */ currLine++; currPos = 1;}
 
@@ -75,14 +67,7 @@ return         {currPos += yyleng; return RETURN;}
 
 "\n"           {currLine++; currPos = 1;}
 
-({LETTER})|({LETTER}({LETTER}|{DIGIT}|"_")*({LETTER}|{DIGIT}))     {
-   currPos += yyleng;
-   char * token = malloc(sizeof(char) * yyleng);
-   strcpy(token, yytext);
-   yylval.op_val = token;
-   identToken = yytext; 
-   return IDENT;
-}
+({LETTER})|({LETTER}({LETTER}|{DIGIT}|"_")*({LETTER}|{DIGIT}))     {currPos += yyleng; identToken = yytext; return IDENT;}
 
 ((("_")+)|(({DIGIT})+({LETTER}|"_")))({DIGIT}|{LETTER}|"_")*                { printf("Error at line %d, column %d: identifier \"%s\" must begin with a letter\n", currLine, currPos, yytext); exit(0);}
 
@@ -92,6 +77,4 @@ return         {currPos += yyleng; return RETURN;}
 .   {printf("Error at line %d, column %d: unrecognized symbol \"%s\"\n", currLine, currPos, yytext); exit(0);}
 
 %%
-
-
 

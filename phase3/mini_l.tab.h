@@ -102,11 +102,19 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 20 "mini_l.y" /* yacc.c:1909  */
+#line 33 "mini_l.y" /* yacc.c:1909  */
 
+  struct attribute{
+	char* name;
+	int index;
+	char* type;
+	int value;
+	int size;
+  }attribute;
   char *op_val;
+  int numberval;
 
-#line 110 "mini_l.tab.h" /* yacc.c:1909  */
+#line 118 "mini_l.tab.h" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;

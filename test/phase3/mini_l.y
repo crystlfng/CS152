@@ -1,3 +1,13 @@
+/* MINI-L Parser for CS152 Part 2*/
+/*%code requires{
+    #include <string>
+    using namespace std;
+    struct nonTerm {
+        string code;
+        string ret_name;
+    }
+}*/
+
 %{
     #define YY_NO_UNPUT
     #include <iostream>

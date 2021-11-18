@@ -1,43 +1,47 @@
 %{
+   #include <iostream>
    #include<stdio.h>
-   #include<string.h>
+   #include<string>
    #include<vector>
-   #include<vector.h>
+   using namespace std;
+   extern int yylex();
+        extern int yyparse();
+        extern FILE * yyin;
    void yyerror(const char *msg);
    extern int currLine;
    int myError = 0;
    int otherError = 0;
-   
    char *identToken;
    int numberToken;
    int productionID = 0;
-
+   int temp_count = 0;
    struct symbol{
-	string name;
+	char* name;
 	int val;
-	string type;	
-   }
+	char* type;
+	symbol(char* n, int v, char* t){
+		name = n;
+		val = v;
+		type = t;	
+	}	
+	symbol(){};
+   };
    vector<symbol> symbolTable;
-
+   bool find(vector<symbol>, symbol);
 %}
 
 %union {
   struct attribute{
-	string name;
+	char* name;
 	int index;
-	string type;
+	char* type;
 	int value;
 	int size;
-  }
+  }attribute;
   char *op_val;
+  int numberval;
 }
 
-%define parse.error verbose
-%type <op_val> var
-%type <op_val> ident
-%type <op_val> expression
-%type <op_val> multiplicative_expression
-%type <op_val> term
 %start prog_start
 %token BEGIN_PARAMS END_PARAMS BEGIN_LOCALS END_LOCALS BEGIN_BODY END_BODY
 %token FUNCTION RETURN MAIN
@@ -51,8 +55,14 @@
 %token SUB ADD MULT DIV MOD
 %token EQ NEQ LT GT LTE GTE
 %token SEMICOLON COLON COMMA L_PAREN R_PAREN ASSIGN
-%token <op_val> NUMBER 
-%token <op_val> IDENT
+%token <numberval>NUMBER 
+%token <op_val>IDENT
+%type <attribute> prog_start
+%type <attribute> function 
+%type <attribute> function_ident
+%type <attribute> declaration
+%type <attribute> ident
+%define parse.error verbose
 
 %%
 
@@ -75,28 +85,25 @@ function: function_ident
 
 };
 
+ident: 	IDENT
+	{
+	$$.name = $1;
+	}
+;
+
 end_body: END_BODY {
-   printf("endfunc\n");
 }
 ;
-function_ident: FUNCTION ident {
 
-     char *token = identToken;
-     printf("func %s\n", token);
-     strcpy(list_of_function_names[count_names], token);
-     count_names++;
+function_ident: FUNCTION ident{
+	symbol temp($2.name,0,"function");
+	if(!find(symbolTable, temp)) {
+    		symbolTable.push_back(temp);
+		printf("func %s\n", $2.name);
+	} else {
+    		printf("error: function %s already exists", $2.name);
+	}
 }
-
-
-;
-ident:
-	IDENT
-		{struct symbol temp;
-		temp.name = "ident";
-		temp.val = $1;
-		temp.type =  "identifier";
-		symbolTable.push_back(temp);
-		}
 ;
 
 declarations: 
@@ -108,23 +115,35 @@ declarations:
 declaration: 
 	IDENT COLON INTEGER
 {
-
-       char *token = $1;
-       printf(". %s\n", token);
-
+	symbol temp;
+	temp.name = $1;
+	temp.type = "integer";
+	if(!find(symbolTable, temp)) {
+                symbolTable.push_back(temp);
+		printf(". %s\n", $1);
+        } else {
+                yyerror("variable already exists");
+        }
 }
 	| IDENT COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER
-		{};
+{
+	symbol temp; 
+	temp.name = $1;
+	temp.type = "array";
+	if(!find(symbolTable, temp)) {
+                symbolTable.push_back(temp);
+                printf(".[] %s, %d\n", $1,$5);
+        } else {
+                yyerror("array already exists");
+        }
+}
+
+;
 
 statement: 
 	var ASSIGN expression
 {
-     
-
-  char *dest = $1;
-  char *src  = $3;
-  printf("= %s, %s\n", dest, src);
-
+	
 }
 	| IF bool_exp THEN statements ENDIF
 		{}
@@ -151,53 +170,43 @@ statements:
 
 expression: 
 	multiplicative_expression
-{$$ = $1; }
+{}
 	| multiplicative_expression ADD expression
 {     
-  char *src1 =  $1;
-  char *src2 =  $3;
-  char *dest = "_temp";
-  printf("+ %s, %s, %s\n", dest, src1, src2);
-  $$ = dest;
 }
 	| multiplicative_expression SUB expression
 {
-
-  char *src1 =  $1;
-  char *src2 =  $3;
-  char *dest = "_temp";
-  printf("- %s, %s, %s\n", dest, src1, src2);
-  $$ = dest;
-
-
 };
 
 multiplicative_expression: 
 	term
-		{ $$ = $1; }
 	| term MULT multiplicative_expression
-		{ $$ = "SLDKFJDSLKJ"; }
+		{ 
+		}
 	| term DIV multiplicative_expression
-		{ $$ = "SLDKFJDSLKJ"; }
+{ }
 	| term MOD multiplicative_expression
-		{ $$ = "SLDKFJDSLKJ"; }
+		{ }
 		;
 
 term: 
 	var
-		{ $$ = $1; }
+{
+	string temp = newtemp(); 
+	printf(". %")
+}
 	| SUB var
-		{ $$ = "SLDKFJDSLKJ"; }
+		{ }
 	| NUMBER
-		{ $$ = $1; }
+		{ }
 	| SUB NUMBER
-		{ $$ = "SLDKFJDSLKJ"; }
+		{ }
 	| L_PAREN expression R_PAREN
-		{ $$ = "SLDKFJDSLKJ"; }
+		{ }
 	| SUB L_PAREN expression R_PAREN
-		{ $$ = "SLDKFJDSLKJ"; }
+		{ }
 	| ident L_PAREN expressions R_PAREN
-		{ $$ = "SLDKFJDSLKJ"; };
+		{ };
 
 expressions: 
 	/* epsilon */
@@ -257,12 +266,10 @@ comp:
 
 var:  ident
 { 
-    $$ = $1; 
-
 }
 
 	| ident L_SQUARE_BRACKET expression R_SQUARE_BRACKET
-		{ $$ = 0;  /*garbage */};
+		{};
 vars:
 	var
 		{}
@@ -272,15 +279,30 @@ vars:
 
 %%
 
+string newtemp(){
+	string temp = "_temp" + std::to_string(temp_count) + "_";
+	temp_count++;	
+	return temp;
+}
+
 int main(int argc, char **argv)
 {
-   yyparse();
-   /*int i =0;
-   for(i =0; i < count_names; i++ ) {
-     printf("%s\n", list_of_function_names[i]);
-   }*/
-
+	yyparse();
    return 0;
+}
+
+bool find(vector<symbol> x, symbol y){
+	int i = 0;
+
+	while(i<x.size()){ //while i is less than size of vector
+		if(x[i].name == y.name){ //if element at index i in vector is equal to symbol we are looking for
+		return true;  //found in vector
+		}
+		else{
+		i++;	//keep iterating through vector
+		}
+	}
+	return false; //not found in vector
 }
 
 void yyerror(const char *msg)
