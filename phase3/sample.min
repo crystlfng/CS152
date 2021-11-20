@@ -9,5 +9,5 @@ beginlocals
 endlocals
 
 beginbody   ## main program
-
+a := 15 / 5;
 endbody

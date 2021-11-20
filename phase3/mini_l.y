@@ -2,6 +2,7 @@
    #include <iostream>
    #include<stdio.h>
    #include<string>
+   #include <stdlib.h>
    #include<vector>
    using namespace std;
    extern int yylex();
@@ -19,7 +20,7 @@
 	char* name;
 	int val;
 	char* type;
-	symbol(char* n, int v, char* t){
+	symbol(char* n, int v, char*t){
 		name = n;
 		val = v;
 		type = t;	
@@ -27,7 +28,9 @@
 	symbol(){};
    };
    vector<symbol> symbolTable;
+   vector<string> temps;
    bool find(vector<symbol>, symbol);
+   string newtemp();
 %}
 
 %union {
@@ -38,7 +41,7 @@
 	int value;
 	int size;
   }attribute;
-  char *op_val;
+  char* op_val;
   int numberval;
 }
 
@@ -58,10 +61,26 @@
 %token <numberval>NUMBER 
 %token <op_val>IDENT
 %type <attribute> prog_start
+%type <attribute> functions
 %type <attribute> function 
 %type <attribute> function_ident
-%type <attribute> declaration
 %type <attribute> ident
+%type <attribute> declaration
+%type <attribute> declarations
+%type <attribute> statement
+%type <attribute> statements
+%type <attribute> expression
+%type <attribute> multiplicative_expression
+%type <attribute> term
+%type <attribute> expressions
+%type <attribute> comma_sep_expressions
+%type <attribute> bool_exp
+%type <attribute> relation_and_exp
+%type <attribute> relation_exp
+%type <attribute> comp
+%type <attribute> var
+%type <attribute> vars
+
 %define parse.error verbose
 
 %%
@@ -80,9 +99,9 @@ function: function_ident
 	SEMICOLON
 	BEGIN_PARAMS declarations END_PARAMS
 	BEGIN_LOCALS declarations END_LOCALS
-	BEGIN_BODY statements end_body 
+	BEGIN_BODY statements END_BODY 
 {
-
+printf("endfunc\n");	
 };
 
 ident: 	IDENT
@@ -91,9 +110,6 @@ ident: 	IDENT
 	}
 ;
 
-end_body: END_BODY {
-}
-;
 
 function_ident: FUNCTION ident{
 	symbol temp($2.name,0,"function");
@@ -121,20 +137,28 @@ declaration:
 	if(!find(symbolTable, temp)) {
                 symbolTable.push_back(temp);
 		printf(". %s\n", $1);
+		//printf("ident %s of type %s is pushed into vector\n", temp.name, temp.type);
         } else {
                 yyerror("variable already exists");
         }
 }
 	| IDENT COLON ARRAY L_SQUARE_BRACKET NUMBER R_SQUARE_BRACKET OF INTEGER
 {
+	if($5 <= 0){
+		const char* msg = "array canoot have size 0 or less";
+		yyerror(msg);
+	}
 	symbol temp; 
 	temp.name = $1;
 	temp.type = "array";
+
+
 	if(!find(symbolTable, temp)) {
                 symbolTable.push_back(temp);
                 printf(".[] %s, %d\n", $1,$5);
         } else {
-                yyerror("array already exists");
+		const char* msg = "array already exists\n";
+                yyerror(msg);
         }
 }
 
@@ -143,7 +167,23 @@ declaration:
 statement: 
 	var ASSIGN expression
 {
-	
+	symbol temp;
+//printf("assign\n");
+	temp.name = $1.name;
+//printf("assign\n");
+	temp.type = $1.type;
+
+	//cannot find variables in vector for some reason?
+	if(find(symbolTable, temp)){
+		$1.value = $3.value;
+		//printf("%s = %d\n", $1.name, $1.value);
+		printf("= %s, %s\n", $1.name, $3.name);
+	}
+	else{
+		printf("%s of type %s not found in vector\n", temp.name,temp.type);
+		const char* msg = "variable is not declared in scope\n";
+		yyerror(msg);
+	}		
 }
 	| IF bool_exp THEN statements ENDIF
 		{}
@@ -156,7 +196,9 @@ statement:
 	| READ vars
 		{}
 	| WRITE vars
-		{}
+{
+	printf(". > %s", $2.name);
+}
 	| CONTINUE
 		{}
 	| RETURN expression
@@ -170,21 +212,51 @@ statements:
 
 expression: 
 	multiplicative_expression
-{}
+{
+//printf("expression\n");
+$$=$1;
+}
 	| multiplicative_expression ADD expression
-{     
+{ 
+	string temp= newtemp();
+        int sum = $1.value + $3.value;
+        printf(". %s\n", temp.c_str());
+        printf("+ %s, %s, %s\n", temp.c_str(), $1.name, $3.name);
+        $$.value = sum;
+        $$.name = const_cast<char*>(temp.c_str());	    
 }
 	| multiplicative_expression SUB expression
 {
+	string temp= newtemp();
+        int dif = $1.value - $3.value;
+        printf(". %s\n", temp.c_str());
+        printf("- %s, %s, %s\n", temp.c_str(), $1.name, $3.name);
+        $$.value = dif;
+        $$.name = const_cast<char*>(temp.c_str());
 };
 
 multiplicative_expression: 
 	term
+{
+$$=$1;
+}
 	| term MULT multiplicative_expression
-		{ 
-		}
+{ 
+}
 	| term DIV multiplicative_expression
-{ }
+{
+	string temp= newtemp(); 
+	int divide = $1.value/$3.value;
+	//printf("divide : %d\n", divide); 
+
+	printf(". %s\n", temp.c_str());
+
+	// is printing wrong / temp, temp, 2
+	printf("/ %s, %s, %s\n", temp.c_str(), $1.name, $3.name);
+
+	$$.value = divide;
+	$$.name = const_cast<char*>(temp.c_str());
+}
 	| term MOD multiplicative_expression
 		{ }
 		;
@@ -192,13 +264,17 @@ multiplicative_expression:
 term: 
 	var
 {
-	string temp = newtemp(); 
-	printf(". %")
+$$ = $1;
 }
 	| SUB var
 		{ }
-	| NUMBER
-		{ }
+	| NUMBER		
+{
+	$$.name = const_cast<char*>(newtemp().c_str());     
+	$$.value = $1;
+	printf(". %s\n", $$.name);
+	printf("= %s, %d\n", $$.name, $$.value);
+}
 	| SUB NUMBER
 		{ }
 	| L_PAREN expression R_PAREN
@@ -265,7 +341,9 @@ comp:
 		{};
 
 var:  ident
-{ 
+{
+$$ = $1;
+$$.type = "integer";
 }
 
 	| ident L_SQUARE_BRACKET expression R_SQUARE_BRACKET
@@ -280,7 +358,8 @@ vars:
 %%
 
 string newtemp(){
-	string temp = "_temp" + std::to_string(temp_count) + "_";
+	string temp = "_temp_" + std::to_string(temp_count);
+	temps.push_back(temp); //to stop destructor from deleting strings
 	temp_count++;	
 	return temp;
 }
@@ -305,7 +384,7 @@ bool find(vector<symbol> x, symbol y){
 	return false; //not found in vector
 }
 
-void yyerror(const char *msg)
+void yyerror(const char* msg)
 {
    if(myError == 0)
    {
@@ -320,5 +399,6 @@ void yyerror(const char *msg)
          otherError = 0;
       }
    }
-   myError = 0;
+  myError = 0;
+  exit(0);
 }

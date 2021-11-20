@@ -1,6 +1,13 @@
 %option noyywrap
 %{   
 #include "mini_l.tab.h"
+#define YY_NO_UNPUT
+
+using namespace std;
+
+#include <iostream>
+#include <stdio.h>
+#include <string>
    int currLine = 1, currPos = 1;
    
    extern char *identToken;
@@ -9,6 +16,7 @@
 
 DIGIT    [0-9]
 LETTER   [a-zA-Z]
+identifier		({letter}({digit}|{letter}|"_")*({digit}|{letter}))|{letter}*
    
 %%
 
@@ -18,7 +26,7 @@ endparams      {currPos += yyleng; return END_PARAMS;}
 beginlocals    {currPos += yyleng; return BEGIN_LOCALS;}
 endlocals      {currPos += yyleng; return END_LOCALS;}
 beginbody      {currPos += yyleng; return BEGIN_BODY;}
-endbody        {currPos += yyleng; return END_BODY;}
+"endbody"        {currPos += yyleng; return END_BODY;}
 integer        {currPos += yyleng; return INTEGER;}
 array          {currPos += yyleng; return ARRAY;}
 of             {currPos += yyleng; return OF;}
@@ -59,7 +67,7 @@ return         {currPos += yyleng; return RETURN;}
 ":="           {currPos += yyleng; return ASSIGN;}
 "continue"     {currPos += yyleng; return CONTINUE;}
 
-{DIGIT}+       {currPos += yyleng; numberToken = atoi(yytext); return NUMBER;}
+{DIGIT}+       {currPos += yyleng; yylval.numberval = atoi(yytext); return NUMBER;}
 
 ##(.)*\n       {/* do not print comments */ currLine++; currPos = 1;}
 
@@ -67,7 +75,11 @@ return         {currPos += yyleng; return RETURN;}
 
 "\n"           {currLine++; currPos = 1;}
 
-({LETTER})|({LETTER}({LETTER}|{DIGIT}|"_")*({LETTER}|{DIGIT}))     {currPos += yyleng; identToken = yytext; return IDENT;}
+({LETTER})|({LETTER}({LETTER}|{DIGIT}|"_")*({LETTER}|{DIGIT})) {
+    currPos += yyleng;
+    yylval.op_val = strdup(yytext);
+    return IDENT;
+}
 
 ((("_")+)|(({DIGIT})+({LETTER}|"_")))({DIGIT}|{LETTER}|"_")*                { printf("Error at line %d, column %d: identifier \"%s\" must begin with a letter\n", currLine, currPos, yytext); exit(0);}
 
