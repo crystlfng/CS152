@@ -1,0 +1,55 @@
+func main
+.[] a, 20
+. b
+. c
+. _temp_0
+= _temp_0, 3
+b assinged 3
+= b, _temp_0
+. _temp_1
+= _temp_1, 5
+c assinged 5
+= c, _temp_1
+. _temp_2
+= _temp_2, 0
+. _temp_3
++ _temp_3, b, c
+_temp_3 assinged 8
+= _temp_3, _temp_3
+. _temp_4
+= _temp_4, 0
+.> a[0]
+. _temp_5
+= _temp_5, 1
+. _temp_6
+= _temp_6, 100
+_temp_6 assinged 100
+= _temp_6, _temp_6
+. _temp_7
+= _temp_7, 1
+.> a[1]
+. _temp_8
+= _temp_8, 2
+. _temp_9
+= _temp_9, 200
+_temp_9 assinged 200
+= _temp_9, _temp_9
+. _temp_10
+= _temp_10, 2
+.> a[2]
+. _temp_11
+= _temp_11, 3
+. _temp_12
+= _temp_12, 0
+. _temp_13
+= _temp_13, 1
+. _temp_14
++ _temp_14, _temp_14, c
+. _temp_15
+* _temp_15, _temp_13, _temp_14
+_temp_12 assinged 0
+= _temp_12, _temp_15
+. _temp_16
+= _temp_16, 3
+.> a[3]
+endfunc

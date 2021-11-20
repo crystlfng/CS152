@@ -1,6 +1,7 @@
 %{
    #include <iostream>
    #include<stdio.h>
+   #include<string.h>
    #include<string>
    #include <stdlib.h>
    #include<vector>
@@ -29,7 +30,8 @@
    };
    vector<symbol> symbolTable;
    vector<string> temps;
-   bool find(vector<symbol>, symbol);
+   symbol find(char*);
+   bool isFind(symbol);
    string newtemp();
 %}
 
@@ -113,7 +115,7 @@ ident: 	IDENT
 
 function_ident: FUNCTION ident{
 	symbol temp($2.name,0,"function");
-	if(!find(symbolTable, temp)) {
+	if(!isFind(temp)) {
     		symbolTable.push_back(temp);
 		printf("func %s\n", $2.name);
 	} else {
@@ -134,7 +136,7 @@ declaration:
 	symbol temp;
 	temp.name = $1;
 	temp.type = "integer";
-	if(!find(symbolTable, temp)) {
+	if(!isFind(temp)) {
                 symbolTable.push_back(temp);
 		printf(". %s\n", $1);
 		//printf("ident %s of type %s is pushed into vector\n", temp.name, temp.type);
@@ -153,7 +155,7 @@ declaration:
 	temp.type = "array";
 
 
-	if(!find(symbolTable, temp)) {
+	if(!isFind(temp)) {
                 symbolTable.push_back(temp);
                 printf(".[] %s, %d\n", $1,$5);
         } else {
@@ -173,9 +175,21 @@ statement:
 //printf("assign\n");
 	temp.type = $1.type;
 
-	//cannot find variables in vector for some reason?
-	if(find(symbolTable, temp)){
+
+	if(isFind(temp)){
 		$1.value = $3.value;
+		int i =0;
+		char* name;
+		while(i<symbolTable.size()){ //while i is less than size of vector
+                if(strcmp(symbolTable[i].name, $1.name) == 0){
+                symbolTable[i].val = $3.value;
+                break;
+                }
+                else{
+                 i++;
+                }
+}
+		printf("%s assinged %d\n", $1.name, $3.value);
 		//printf("%s = %d\n", $1.name, $1.value);
 		printf("= %s, %s\n", $1.name, $3.name);
 	}
@@ -197,7 +211,7 @@ statement:
 		{}
 	| WRITE vars
 {
-	printf(". > %s", $2.name);
+	printf(".> %s\n", $2.name);
 }
 	| CONTINUE
 		{}
@@ -220,6 +234,7 @@ $$=$1;
 { 
 	string temp= newtemp();
         int sum = $1.value + $3.value;
+ 	//printf("sum : %d\n", sum);
         printf(". %s\n", temp.c_str());
         printf("+ %s, %s, %s\n", temp.c_str(), $1.name, $3.name);
         $$.value = sum;
@@ -229,6 +244,7 @@ $$=$1;
 {
 	string temp= newtemp();
         int dif = $1.value - $3.value;
+ 	//printf("dif : %d\n", dif);
         printf(". %s\n", temp.c_str());
         printf("- %s, %s, %s\n", temp.c_str(), $1.name, $3.name);
         $$.value = dif;
@@ -241,17 +257,27 @@ multiplicative_expression:
 $$=$1;
 }
 	| term MULT multiplicative_expression
-{ 
+{
+	string temp= newtemp(); 
+        int product = $1.value*$3.value;
+        //printf("%d * %d : %d\n", $1.value, $3.value, product); 
+        
+        printf(". %s\n", temp.c_str());
+        
+        printf("* %s, %s, %s\n", temp.c_str(), $1.name, $3.name);
+        
+        $$.value = product;
+        $$.name = const_cast<char*>(temp.c_str());
+ 
 }
 	| term DIV multiplicative_expression
 {
 	string temp= newtemp(); 
 	int divide = $1.value/$3.value;
-	//printf("divide : %d\n", divide); 
+	//printf("div: %d\n", divide); 
 
 	printf(". %s\n", temp.c_str());
 
-	// is printing wrong / temp, temp, 2
 	printf("/ %s, %s, %s\n", temp.c_str(), $1.name, $3.name);
 
 	$$.value = divide;
@@ -264,7 +290,18 @@ $$=$1;
 term: 
 	var
 {
-$$ = $1;
+	symbol temp;
+	temp.name = $1.name;
+	if(isFind(temp)){
+		temp = find($1.name);
+        	$$.name = temp.name;
+		$$.value = temp.val;
+	}
+	else{
+		const char* msg = "variable not declared in scope";
+		yyerror(msg);
+	}	
+		
 }
 	| SUB var
 		{ }
@@ -278,11 +315,21 @@ $$ = $1;
 	| SUB NUMBER
 		{ }
 	| L_PAREN expression R_PAREN
-		{ }
+{ 
+$$ = $2;
+}
 	| SUB L_PAREN expression R_PAREN
 		{ }
 	| ident L_PAREN expressions R_PAREN
-		{ };
+{
+symbol temp;
+temp.name = $1.name;
+if(!isFind(temp)){
+	const char* msg = "function is not declared in scope";
+	yyerror(msg);		
+}
+ 
+};
 
 expressions: 
 	/* epsilon */
@@ -347,7 +394,25 @@ $$.type = "integer";
 }
 
 	| ident L_SQUARE_BRACKET expression R_SQUARE_BRACKET
-		{};
+{
+symbol temp;
+temp.name = $1.name;
+if(isFind(temp)){
+	char* identifier = $1.name;
+	std::string str(identifier);
+	string index = identifier + std::string("[") + std::to_string($3.value) + std::string("]");
+	$$.name = const_cast<char*>(index.c_str());;
+	$$.type = "array";
+	$$.index = $3.value;
+	temp.name = $$.name;
+	temp.type = $$.type;
+	symbolTable.push_back(temp);
+}
+else{
+	const char* msg = "array not declared in scope";
+	yyerror(msg);
+}
+};
 vars:
 	var
 		{}
@@ -370,11 +435,26 @@ int main(int argc, char **argv)
    return 0;
 }
 
-bool find(vector<symbol> x, symbol y){
+symbol find(char* y){
 	int i = 0;
+	symbol found;
+        while(i<symbolTable.size()){ //while i is less than size of vector
+                if(strcmp(symbolTable[i].name, y) == 0){ //if element at index i in vector is equal to symbol we are looking for
+                found = symbolTable[i];  //found in vector
+		return found;
+                }
+                else{
+                i++;    //keep iterating through vector
+                }
+        }
+	return found;
+}
 
-	while(i<x.size()){ //while i is less than size of vector
-		if(x[i].name == y.name){ //if element at index i in vector is equal to symbol we are looking for
+bool isFind(symbol y){
+	int i = 0;
+	
+	while(i<symbolTable.size()){ //while i is less than size of vector
+		if(strcmp(symbolTable[i].name, y.name) == 0){ //if element at index i in vector is equal to symbol we are looking for
 		return true;  //found in vector
 		}
 		else{

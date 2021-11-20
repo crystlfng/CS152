@@ -9,5 +9,11 @@ beginlocals
 endlocals
 
 beginbody   ## main program
-a := 15 / 5;
+  a := 15 / 5;
+  write a;
+  b := 5 + 5;
+  c := 8 - 2;
+  write b;
+  write c;
+  d[0] := b + c;
 endbody
