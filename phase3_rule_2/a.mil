@@ -1,0 +1,14 @@
+func main
+. _temp
+. i
+= i, 0
+: while_loop_label
+?:= while_loop_body, 0
+:= while_loop_end_label
+: while_loop_body
++ _temp, i, 1
+= i, _temp
+.> i
+:= while_loop_label
+: while_loop_end_label
+endfunc
